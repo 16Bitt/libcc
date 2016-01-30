@@ -7,7 +7,8 @@ all: $(SOURCES)
 	$(CC) $(CFLAGS) $(SOURCES) $(LIBCC) -o $(TARGET)
 
 run: all
-	./$(TARGET)
+	cat langtest.txt
+	cat langtest.txt | ./$(TARGET)
 
 clean:
 	-rm $(SOURCES)

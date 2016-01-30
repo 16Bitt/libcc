@@ -22,10 +22,16 @@ void emitln(const char* fmt, ...){
 }
 
 void emitln_notab(const char* fmt, ...){
-	fprintf(code_output, "\t");
 	va_list args;
 	va_start(args, fmt);
 	vfprintf(code_output, fmt, args);
 	va_end(args);
 	putchar('\n');
+}
+
+void emit_notab(const char* fmt, ...){
+	va_list args;
+	va_start(args, fmt);
+	vfprintf(code_output, fmt, args);
+	va_end(args);
 }

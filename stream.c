@@ -6,16 +6,12 @@ FILE* code_input;
 unsigned char look;
 
 void whitespace(){
-	while(isblank(look))
+	while(isspace(look))
 		getcharacter();
 }
 
 void getcharacter(){
-	int val = fgetc(code_input);
-	if(val == EOF)
-		look = 0xFF;
-	else
-		look = (unsigned char) val;
+	look = fgetc(code_input);
 }
 
 char* getnumber(){
@@ -43,7 +39,7 @@ char* getname(){
 	int i = 0;
 
 	if(!isalnum(look))
-		expected("Number");
+		expected("Name");
 
 	while(isalnum(look)){
 		buffer[i++] = look;
@@ -59,12 +55,40 @@ char* getname(){
 }
 
 void match(char* sym){
-	int i = 0;
-	
-	while(sym[i] != '\0'){
-		if(sym[i++] != look){
-			getcharacter();
+	int len = strlen(sym);
+	int i;
+
+	for(i = 0; i < len; i++){
+		if(sym[i] != look){
 			expected(sym);
 		}
+		
+		getcharacter();
 	}
+
+	whitespace();
+}
+
+char* peekname(){
+	char buff[BUFFSZ];
+	int i = 0;
+
+	//Get the next token from the file stream
+	while(isalnum(look)){
+		buff[i++] = look;
+		if(i >= BUFFSZ - 1)
+			error("Token exceeded maximum length");
+		getcharacter();
+	}
+	buff[i] = '\0';
+
+	char* ret = dynstring("%s", buff);
+	
+	//Pack the data back into the stream
+	buff[i] = look;
+	while(i >= 0)
+		ungetc(buff[i--], code_input);
+	
+	getcharacter();
+	return ret;
 }

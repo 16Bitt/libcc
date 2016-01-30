@@ -27,5 +27,5 @@ void error(const char* fmt, ...){
 }
 
 void expected(char* s){
-	error("Expected '%s', but got something else");
+	error("Expected '%s' but look='%c'", s, look);
 }

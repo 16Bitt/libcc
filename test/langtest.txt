@@ -1,0 +1,12 @@
+{
+	Variable = -1 + -2;
+	Tester = Variable - 100;
+	
+	asm int 0x10;
+
+	if(true){
+		Variable = Tester;
+	} else {
+		Test = Variable;
+	}
+}

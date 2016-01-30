@@ -20,6 +20,7 @@ extern FILE* error_output;
 void getcharacter();
 char* getnumber();
 char* getname();
+char* peekname();
 
 //Check for a specific token
 void match(char* sym);
@@ -33,6 +34,7 @@ void expected(char* s);
 void emit(const char* fmt, ...);
 void emitln(const char* fmt, ...);
 void emitln_notab(const char* fmt, ...);
+void emit_notab(const char* fmt, ...);
 
 //Label handling
 char* getlabel();
@@ -43,11 +45,23 @@ bool is_in(char* str, ...);
 char* dynstring(const char* str, ...);
 
 //Switch case for strings...
-#define STRSWITCH(val) char* tmpswitchval = (val); if(false){}
-#define STRCASE(val) else if(strcmp(tmpswitchval, (val)) == 0){
-#define STRCASEEND }
+#define STRSWITCH(val) char* tmpswitchval = (val); if(false){
+#define STRCASE(val) }else if(strcmp(tmpswitchval, (val)) == 0){
+#define STRSWITCHEND }
+#define STRDEFAULT }else{
 
 //Initialization
 void libcc_init(FILE* in, FILE* out, FILE* err);
+void identifiers_init();
 
+//Identifier handling
+bool isfunction(char* name);
+char* getaccessor(char* name);
+char* gettype(char* name);
+void startscope();
+void addvar(char* name, char* type, char* accessor);
+void addfunc(char* name, char* type, char* accessor, int num_args);
+void endscope();
+bool idexists(char* name);
+int numargs(char* name);
 #endif
