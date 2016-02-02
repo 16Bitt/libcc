@@ -1,12 +1,11 @@
 {
-	Variable = -1 + -2;
-	Tester = Variable - 100;
-	
-	asm int 0x10;
+	int bar();
 
-	if(true){
-		Variable = Tester;
-	} else {
-		Test = Variable;
+	char* foo(int a, int b, int c){
+		int test;
+
+		test = bar();
+		bar();
+		test = a + b + c;
 	}
 }

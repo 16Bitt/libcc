@@ -6,7 +6,7 @@
 FILE* error_output;
 
 void warning(const char* fmt, ...){
-	fprintf(error_output, "Warning:\t");
+	fprintf(error_output, "Warning on line %d:\t", line_no);
 	
 	va_list args;
 	va_start(args, fmt);
@@ -16,7 +16,7 @@ void warning(const char* fmt, ...){
 }
 
 void error(const char* fmt, ...){
-	fprintf(error_output, "Error:  \t");
+	fprintf(error_output, "Error on line %d:  \t", line_no);
 	
 	va_list args;
 	va_start(args, fmt);
@@ -27,5 +27,5 @@ void error(const char* fmt, ...){
 }
 
 void expected(char* s){
-	error("Expected '%s' but look='%c'", s, look);
+	error("Expected '%s' but got '%c' on line %d", s, look, line_no);
 }

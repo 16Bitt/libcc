@@ -11,6 +11,9 @@
 //Our lookahead character
 extern unsigned char look;
 
+//Current line we're parsing
+extern int line_no;
+
 //Target files
 extern FILE* code_output;
 extern FILE* code_input;
@@ -21,6 +24,7 @@ void getcharacter();
 char* getnumber();
 char* getname();
 char* peekname();
+char* getstring(char delim);
 
 //Check for a specific token
 void match(char* sym);
@@ -64,4 +68,10 @@ void addfunc(char* name, char* type, char* accessor, int num_args);
 void endscope();
 bool idexists(char* name);
 int numargs(char* name);
+
+//Strings
+void strings_init();
+char* add_string(char* str);
+void emit_strings(char* fmt);
+
 #endif

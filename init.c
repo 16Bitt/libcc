@@ -7,4 +7,6 @@ void libcc_init(FILE* in, FILE* out, FILE* err){
 	error_output = err;
 
 	getcharacter();
+	strings_init();
+	identifiers_init();
 }

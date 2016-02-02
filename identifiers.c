@@ -6,7 +6,9 @@ typedef struct identifier{
 	char*	name;
 	char* 	accessor;
 	bool	function;
+	
 	bool	scope;
+	
 	int	num_args;
 	struct	identifier* next;
 } identifier_t;
@@ -70,7 +72,7 @@ void startscope(){
 	id->scope	= true;
 
 	id->next 	= id_root->next;
-	id_root->next	= id->next;
+	id_root->next	= id;
 }
 
 void addvar(char* name, char* type, char* accessor){
@@ -84,7 +86,7 @@ void addvar(char* name, char* type, char* accessor){
 	id->scope	= false;
 
 	id->next 	= id_root->next;
-	id_root->next	= id->next;
+	id_root->next	= id;
 }
 
 void addfunc(char* name, char* type, char* accessor, int num_args){
@@ -99,7 +101,7 @@ void addfunc(char* name, char* type, char* accessor, int num_args){
 	id->scope	= false;
 
 	id->next 	= id_root->next;
-	id_root->next	= id->next;
+	id_root->next	= id;
 }
 
 void endscope(){
@@ -122,3 +124,5 @@ int numargs(char* name){
 
 	return id->num_args;
 }
+
+

@@ -4,10 +4,14 @@
 
 FILE* code_input;
 unsigned char look;
+int line_no = 1;
 
 void whitespace(){
-	while(isspace(look))
+	while(isspace(look)){
+		if(look == '\n')
+			line_no++;
 		getcharacter();
+	}
 }
 
 void getcharacter(){
@@ -52,6 +56,24 @@ char* getname(){
 	whitespace();
 
 	return dynstring("%s", buffer);
+}
+
+char* getstring(char delim){
+	char buff[BUFFSZ];
+	int i = 0;
+
+	match(dynstring("%c", delim));
+	while(look != delim){
+		buff[i++] = look;
+		getcharacter();
+		if(i >= BUFFSZ - 1)
+			error("String exceeded maximum length");
+	}
+	buff[i] = '\0';
+	match(dynstring("%c", delim));
+
+	whitespace();
+	return dynstring("%s", buff);
 }
 
 void match(char* sym){
