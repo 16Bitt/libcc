@@ -4,6 +4,7 @@
 void operator();
 void expression();
 int scopedepth = 0;
+char* current_type = "dword";
 
 void identifier(){
 	char* name = getname();
@@ -33,6 +34,14 @@ void identifier(){
 	}
 
 	else {
+		STRSWITCH(gettype(name))
+			STRCASE("char")
+				current_type = "byte";
+			STRCASE("short")
+				current_type = "word";
+			STRDEFAULT
+				current_type = "dword";
+		STRSWITCHEND
 		emitln("mov eax, dword [%s]", getaccessor(name));
 	}
 }
@@ -43,6 +52,32 @@ void term(){
 		emitln("push eax");
 		expression();
 		match(")");
+	}
+	
+	/*else if(look == '['){
+		emitln("push eax");
+		match("[");
+		expression();
+		match("]");
+		emitln("pop ebx");
+		emitln("add eax, ebx");
+		emitln("xchg eax, ebx");
+		emitln("xor eax, eax");
+
+		STRSWITCH(current_type)
+			STRCASE("dword")
+				emitln("mov eax, dword [ebx]");
+			STRCASE("word")
+				emitln("mov ax, word [ebx]");
+			STRCASE("byte")
+				emitln("mov al, byte [ebx]");
+			STRDEFAULT
+				error("Invalid type?");
+		STRSWITCHEND
+	}*/
+
+	else if(look == '"'){
+		emitln("mov eax, %s", add_string(getstring('"')));
 	}
 
 	else if(is_in(dynstring("%c", look), "+", "-", NULL)){
@@ -68,31 +103,52 @@ void operator(){
 	emitln("pop ebx");
 
 	match(dynstring("%c", op));
-	term();
+	if(op == '['){
+		  expression();
+		  match("]");
+		  emitln("pop ebx");
+		  emitln("add eax, ebx");
+		  emitln("xchg eax, ebx");
+		  emitln("xor eax, eax");
 
-	switch(op){
-		case '+':
-			emitln("add eax, ebx");
-			break;
-		case '-':
-			emitln("sub eax, ebx");
-			emitln("neg eax");
-			break;
-		case '*':
-			emitln("imul ebx");
-			break;
-		case '/':
-			emitln("xchg eax, ebx");
-			emitln("idiv ebx");
-			break;
-		default:
-			expected("Operator");
+		  STRSWITCH(current_type)
+		  		STRCASE("dword")
+		  			emitln("mov eax, dword [ebx]");
+		  		STRCASE("word")
+		  			emitln("mov ax, word [ebx]");
+		  		STRCASE("byte")
+		  			emitln("mov al, byte [ebx]");
+		  		STRDEFAULT
+		  			error("Invalid type?");
+		  STRSWITCHEND
+	}
+	else{
+		term();
+
+			  switch(op){
+				  case '+':
+					  emitln("add eax, ebx");
+					  break;
+				  case '-':
+					  emitln("sub eax, ebx");
+					  emitln("neg eax");
+					  break;
+				  case '*':
+					  emitln("imul ebx");
+					  break;
+				  case '/':
+					  emitln("xchg eax, ebx");
+					  emitln("idiv ebx");
+					  break;
+				  default:
+					  expected("Operator");
+			  }
 	}
 }
 
 void expression(){
 	term();
-	while(is_in(dynstring("%c", look), "+", "-", "*", "/", NULL)){
+	while(is_in(dynstring("%c", look), "[", "+", "-", "*", "/", NULL)){
 		emitln("push eax");
 		operator();
 	}
@@ -182,7 +238,7 @@ void dofunction(char* name, char* type){
 	startscope();
 	int i;
 	for(i = 0; i < len; i += 2)
-		addvar(buff[i + 1], buff[i], dynstring("ebp + %d", (len - i) * 4 + 4));
+		addvar(buff[i + 1], buff[i], dynstring("ebp + %d", (len - i) * 4));
 	
 	//Emit the prelude
 	putlabel(name);
@@ -251,7 +307,7 @@ void code(){
 			match("if");
 			doif();
 		STRCASE("while")
-			match("if");
+			match("while");
 			dowhile();
 		STRCASE("return")
 		STRCASE("asm")
@@ -262,11 +318,11 @@ void code(){
 				term();
 				match(";");
 			}
-		        else if(istype(name)){
+		   else if(istype(name)){
 				match(name);
 		        	declare(name);
 			}
-		        else{
+		   else{
 				match(name);
 			        assignment(name);
 			}
@@ -283,10 +339,14 @@ void block(){
 
 void program(){
 	while(look != 0xFF){
-		char* name = getname();
-		STRSWITCH(name)
-			STRCASE("def")
-			STRCASE("var")
-		STRSWITCHEND
+		char* name = peekname();
+			if(istype(name)){
+				match(name);
+					declare(name);
+			}
+			else{
+				match(name);
+				assignment(name);
+			}
 	}
 }

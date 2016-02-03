@@ -1,11 +1,16 @@
-{
-	int bar();
+int bar();
 
-	char* foo(int a, int b, int c){
-		int test;
+char* foo(int a, int b, int c){
+		  int test;
 
-		test = bar();
-		bar();
-		test = a + b + c;
-	}
+		  test = bar();
+		  bar();
+		  test = a + b + c;
+
+		  while(1){
+				bar();
+		  }
+
+		  char* test = "ABC 123";
+		  char test = test[0];
 }

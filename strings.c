@@ -31,7 +31,7 @@ char* add_string(char* str){
 void emit_strings(char* fmt){
 	string_saver_t* current = strings_root;
 	while(current != NULL){
-		emitln(fmt, current->label, current->string);
+		emitln_notab(fmt, current->label, current->string);
 		current = current->next;
 	}
 }
