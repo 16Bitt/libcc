@@ -107,6 +107,14 @@ void operator(){
 		  expression();
 		  match("]");
 		  emitln("pop ebx");
+
+		STRSWITCH(current_type)
+			STRCASE("dword")
+				emitln("shl ebx, 1");
+			STRCASE("word")
+				emitln("shl ebx, 2");
+		STRSWITCHEND
+
 		  emitln("add eax, ebx");
 		  emitln("xchg eax, ebx");
 		  emitln("xor eax, eax");

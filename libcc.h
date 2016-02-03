@@ -49,9 +49,9 @@ bool is_in(char* str, ...);
 char* dynstring(const char* str, ...);
 
 //Switch case for strings...
-#define STRSWITCH(val) char* tmpswitchval = (val); if(false){
+#define STRSWITCH(val) { char* tmpswitchval = (val); if(false){
 #define STRCASE(val) }else if(strcmp(tmpswitchval, (val)) == 0){
-#define STRSWITCHEND }
+#define STRSWITCHEND } }
 #define STRDEFAULT }else{
 
 //Initialization
