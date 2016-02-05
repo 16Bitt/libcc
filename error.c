@@ -6,7 +6,7 @@
 FILE* error_output;
 
 void warning(const char* fmt, ...){
-	fprintf(error_output, "Warning on line %d:\t", line_no);
+	fprintf(error_output, "Warning on line %d: ", line_no);
 	
 	va_list args;
 	va_start(args, fmt);
@@ -16,7 +16,7 @@ void warning(const char* fmt, ...){
 }
 
 void error(const char* fmt, ...){
-	fprintf(error_output, "Error on line %d:  \t", line_no);
+	fprintf(error_output, "Error on line %d: ", line_no);
 	
 	va_list args;
 	va_start(args, fmt);

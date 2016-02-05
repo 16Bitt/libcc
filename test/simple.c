@@ -4,13 +4,36 @@
 void operator();
 void expression();
 int scopedepth = 0;
-char* current_type = "dword";
+char* current_type = "int";
+bool global = true;
+
+char* reduceptr(char* type){
+	size_t len = strlen(type);
+	char buff[BUFFSZ];
+
+	if(type[len - 1] == '*'){
+		int i;
+		for(i = 0; i < len - 1; i++)
+			buff[i] = type[i];
+		buff[i++] = '\0';
+
+		return dynstring("%s", buff);
+	}
+
+	else
+		return type;
+}
+
+void settype(char* type){
+	current_type = type;
+}
 
 void identifier(){
 	char* name = getname();
 
 	if(!idexists(name))
 		error("Identifier '%s' is undeclared", name);
+
 
 	if(look == '('){
 		if(!isfunction(name))
@@ -34,47 +57,41 @@ void identifier(){
 	}
 
 	else {
-		STRSWITCH(gettype(name))
+		emitln("xor eax, eax");
+		current_type = gettype(name);
+		STRSWITCH(current_type)
 			STRCASE("char")
-				current_type = "byte";
+				emitln("mov al, byte [%s]", getaccessor(name));
 			STRCASE("short")
-				current_type = "word";
+				emitln("mov ax, word [%s]", getaccessor(name));
 			STRDEFAULT
-				current_type = "dword";
+				emitln("mov eax, dword [%s]", getaccessor(name));
 		STRSWITCHEND
-		emitln("mov eax, dword [%s]", getaccessor(name));
+
 	}
 }
 
 void term(){
-	if(look == '('){
+	if(look == '*'){
+		match("*");
+		term();
+		emitln("xor ebx, ebx");
+		settype(reduceptr(current_type));
+		STRSWITCH(current_type)
+			STRCASE("short")
+				emitln("mov bx, word [eax]");
+			STRCASE("char")
+				emitln("mov bl, byte [eax]");
+			STRDEFAULT
+				emitln("mov ebx, dword [eax]");
+		STRSWITCHEND
+		emitln("xchg eax, ebx");
+	} else if(look == '('){
 		match("(");
 		emitln("push eax");
 		expression();
 		match(")");
 	}
-	
-	/*else if(look == '['){
-		emitln("push eax");
-		match("[");
-		expression();
-		match("]");
-		emitln("pop ebx");
-		emitln("add eax, ebx");
-		emitln("xchg eax, ebx");
-		emitln("xor eax, eax");
-
-		STRSWITCH(current_type)
-			STRCASE("dword")
-				emitln("mov eax, dword [ebx]");
-			STRCASE("word")
-				emitln("mov ax, word [ebx]");
-			STRCASE("byte")
-				emitln("mov al, byte [ebx]");
-			STRDEFAULT
-				error("Invalid type?");
-		STRSWITCHEND
-	}*/
 
 	else if(look == '"'){
 		emitln("mov eax, %s", add_string(getstring('"')));
@@ -104,15 +121,18 @@ void operator(){
 
 	match(dynstring("%c", op));
 	if(op == '['){
-		  expression();
-		  match("]");
-		  emitln("pop ebx");
-
-		STRSWITCH(current_type)
-			STRCASE("dword")
-				emitln("shl ebx, 1");
-			STRCASE("word")
-				emitln("shl ebx, 2");
+		char* type = reduceptr(current_type);
+		emitln("push ebx");
+		expression();
+		match("]");
+		
+		emitln("pop ebx");
+		STRSWITCH(type)
+			STRCASE("char")
+			STRCASE("short")
+				emitln("shl eax, 1");
+			STRCASE("int")
+				emitln("shl eax, 2");
 		STRSWITCHEND
 
 		  emitln("add eax, ebx");
@@ -120,14 +140,15 @@ void operator(){
 		  emitln("xor eax, eax");
 
 		  STRSWITCH(current_type)
-		  		STRCASE("dword")
+		  		STRCASE("int")
 		  			emitln("mov eax, dword [ebx]");
-		  		STRCASE("word")
+		  		STRCASE("short")
 		  			emitln("mov ax, word [ebx]");
-		  		STRCASE("byte")
+		  		STRCASE("char")
 		  			emitln("mov al, byte [ebx]");
 		  		STRDEFAULT
-		  			error("Invalid type?");
+		  			//error("Invalid type '%s'", current_type);
+		  			emitln("mov eax, dword [ebx]");
 		  STRSWITCHEND
 	}
 	else{
@@ -163,9 +184,44 @@ void expression(){
 }
 
 void assignment(char* name){
-	match("=");
-	expression();
-	emitln("mov dword [%s], eax", getaccessor(name));
+	if(!idexists(name))
+		error("Cannot assign to '%s', identifier undeclared", name);
+	
+	char* type = gettype(name);
+
+	if(look == '['){
+		match("[");
+		expression();
+		match("]");
+		emitln("lea ebx, [%s]", getaccessor(name));
+		STRSWITCH(reduceptr(type))
+			STRCASE("char")
+			STRCASE("short")
+				emitln("shl eax, 1");
+			STRDEFAULT
+				emitln("shl eax, 2");
+		STRSWITCHEND
+		emitln("add ebx, eax");
+		emitln("push ebx");
+		
+		match("=");
+		expression();
+		emitln("pop ebx");
+
+		STRSWITCH(reduceptr(type))
+			STRCASE("char")
+				emitln("mov byte [ebx], al");
+			STRCASE("short")
+				emitln("mov word [ebx], ax");
+			STRDEFAULT
+				emitln("mov dword [ebx], eax");
+		STRSWITCHEND
+	} else {
+		match("=");
+		expression();
+		emitln("mov dword [%s], eax", getaccessor(name));
+	}
+
 	match(";");
 }
 
@@ -206,7 +262,7 @@ void doasm(){
 }
 
 bool istype(char* name){
-	return is_in(name, "char", "short", "int", NULL);
+	return is_in(name, "void", "char", "short", "int", NULL);
 }
 
 char* gettypename(){
@@ -220,6 +276,16 @@ char* gettypename(){
 }
 
 void dofunction(char* name, char* type){
+	if(!global)
+		error("Cannot define a function within another function");
+	
+
+
+	char* jumpover = getlabel();
+	emitln("jmp %s", jumpover);
+
+	global = false;
+
 	int len = 0;
 	char* buff[BUFFSZ];
 	scopedepth = 0;
@@ -238,7 +304,10 @@ void dofunction(char* name, char* type){
 	addfunc(name, type, name, len / 2);
 		
 	if(look == ';'){
+		emitln_notab("extern %s", name);
 		match(";");
+		global = true;
+		putlabel(jumpover);
 		return;
 	}
 
@@ -246,12 +315,16 @@ void dofunction(char* name, char* type){
 	startscope();
 	int i;
 	for(i = 0; i < len; i += 2)
-		addvar(buff[i + 1], buff[i], dynstring("ebp + %d", (len - i) * 4));
+		addvar(buff[i + 1], buff[i], dynstring("ebp + %d", ((len / 2) - (i / 2)) * 4 + 8));
 	
 	//Emit the prelude
+	emitln("\nglobal %s", name);
 	putlabel(name);
 	emitln("push ebp");
 	emitln("mov ebp, esp");
+	
+	if(strcmp(name, "main") == 0)
+		emitln("call libcc_init");
 	
 	//Compile the block
 	block();
@@ -262,6 +335,9 @@ void dofunction(char* name, char* type){
 	emitln("mov esp, ebp");
 	emitln("pop ebp");
 	emitln("ret"); 
+	
+	putlabel(jumpover);
+	global = true;
 }
 
 void dowhile(){
@@ -280,15 +356,41 @@ void dowhile(){
 }
 
 void dovariable(char* name, char* type){
-	addvar(name, type, dynstring("ebp-%i", scopedepth));
-	scopedepth += 4;
-	
-	emitln("sub esp, 4");
-	
-	if(look == '=')
-		assignment(name);
-	else
-		match(";");
+	if(!global){
+		addvar(name, type, dynstring("ebp-%i", scopedepth + 4));
+		scopedepth += 4;
+		
+		emitln("sub esp, 4");
+		
+		if(look == '=')
+			assignment(name);
+		else
+			match(";");
+	}
+
+	else {
+		char* lbl = getlabel();
+		char* jumpover = getlabel();
+		addvar(name, type, lbl);
+		emitln("jmp %s", jumpover);
+		emitln_notab("section .data");
+		putlabel(lbl);
+		STRSWITCH(type)
+			STRCASE("char")
+				emitln("db 0");
+			STRCASE("short")
+				emitln("dw 0");
+			STRDEFAULT
+				emitln("dd 0");
+		STRSWITCHEND
+		emitln_notab("section .text");
+		putlabel(jumpover);
+			
+		if(look == '=')
+			assignment(name);
+		else
+			match(";");
+	}
 }
 
 void declare(char* name){
@@ -318,6 +420,14 @@ void code(){
 			match("while");
 			dowhile();
 		STRCASE("return")
+			if(global)
+				error("Return outside of function");
+			match("return");
+			expression();
+			emitln("mov esp, ebp");
+			emitln("pop ebp");
+			emitln("ret");
+			match(";");
 		STRCASE("asm")
 			match("asm");
 			doasm();

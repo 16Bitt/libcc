@@ -13,3 +13,4 @@ run: all
 clean:
 	-rm $(SOURCES)
 	-rm $(TARGET)
+	-rm out *.o *.lst

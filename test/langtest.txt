@@ -1,16 +1,10 @@
-int bar();
+void puts(char* str);
 
-char* foo(int a, int b, int c){
-		  int test;
+int main(int argc, char** argv){
+	int x = argc;
+	char** y = argv;
+	
+	puts(argv[0]);
 
-		  test = bar();
-		  bar();
-		  test = a + b + c;
-
-		  while(1){
-				bar();
-		  }
-
-		  char* test = "ABC 123";
-		  char test = test[0];
+	return 0;
 }
