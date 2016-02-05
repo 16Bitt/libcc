@@ -95,6 +95,15 @@ void term(){
 
 	else if(look == '"'){
 		emitln("mov eax, %s", add_string(getstring('"')));
+		current_type = "char*";
+	}
+	
+	else if(look == '\''){
+		match("'");
+		emitln("mov eax, %d", look);
+		getcharacter();
+		match("'");
+		current_type = "char";
 	}
 
 	else if(is_in(dynstring("%c", look), "+", "-", NULL)){
@@ -114,6 +123,55 @@ void term(){
 		expected("Number or variable");
 }
 
+bool comp_used = false;
+void comparator(char op){
+	bool eq = false;
+	if(look == '='){
+		eq = true;
+		match("=");
+	}
+	
+	term();
+
+	emitln("cmp ebx, eax");
+	
+	char* lbltrue = getlabel();
+	char* lblend = getlabel();
+
+	if(eq)
+		switch(op){
+			case '>':
+				emitln("jge %s", lbltrue);
+				break;
+			case '<':
+				emitln("jle %s", lbltrue);
+				break;
+			case '=':
+				emitln("je %s", lbltrue);
+				break;
+			default:
+				error("Fatal comparator");
+		}
+
+	else
+		switch(op){
+			case '>':
+				emitln("jg %s", lbltrue);
+				break;
+			case '<':
+				emitln("jl %s", lbltrue);
+				break;
+			default:
+				error("Use of assignment operator in comparison");
+		}
+	
+	emitln("xor eax, eax");
+	emitln("jmp %s", lblend);
+	putlabel(lbltrue);
+	emitln("mov eax, 1");
+	putlabel(lblend);
+}
+
 void operator(){
 	char op = look;
 
@@ -131,7 +189,7 @@ void operator(){
 			STRCASE("char")
 			STRCASE("short")
 				emitln("shl eax, 1");
-			STRCASE("int")
+			STRDEFAULT
 				emitln("shl eax, 2");
 		STRSWITCHEND
 
@@ -152,23 +210,38 @@ void operator(){
 		  STRSWITCHEND
 	}
 	else{
-		term();
-
 			  switch(op){
 				  case '+':
+				  	term();
 					  emitln("add eax, ebx");
 					  break;
 				  case '-':
+				  	term();
 					  emitln("sub eax, ebx");
 					  emitln("neg eax");
 					  break;
 				  case '*':
+				  	term();
 					  emitln("imul ebx");
 					  break;
 				  case '/':
+				  	term();
+					emitln("xor edx, edx");
 					  emitln("xchg eax, ebx");
 					  emitln("idiv ebx");
 					  break;
+				  case '%':
+				  	term();
+					emitln("xor edx, edx");
+				  	emitln("xchg eax, ebx");
+					emitln("idiv ebx");
+					emitln("mov eax, edx");
+					break;
+				  case '>':
+				  case '<':
+				  case '=':
+				  	comparator(op);
+					break;
 				  default:
 					  expected("Operator");
 			  }
@@ -177,7 +250,7 @@ void operator(){
 
 void expression(){
 	term();
-	while(is_in(dynstring("%c", look), "[", "+", "-", "*", "/", NULL)){
+	while(is_in(dynstring("%c", look), "[", "+", "-", "*", "%", "/", "=", "<", ">", NULL)){
 		emitln("push eax");
 		operator();
 	}
@@ -315,7 +388,7 @@ void dofunction(char* name, char* type){
 	startscope();
 	int i;
 	for(i = 0; i < len; i += 2)
-		addvar(buff[i + 1], buff[i], dynstring("ebp + %d", ((len / 2) - (i / 2)) * 4 + 8));
+		addvar(buff[i + 1], buff[i], dynstring("ebp + %d", ((len / 2) - (i / 2)) * 4 + 4));
 	
 	//Emit the prelude
 	emitln("\nglobal %s", name);
@@ -423,11 +496,17 @@ void code(){
 			if(global)
 				error("Return outside of function");
 			match("return");
-			expression();
+			if(look == ';'){
+				match(";");
+				emitln("xor eax, eax");
+			}
+			else{
+				expression();
+				match(";");
+			}
 			emitln("mov esp, ebp");
 			emitln("pop ebp");
 			emitln("ret");
-			match(";");
 		STRCASE("asm")
 			match("asm");
 			doasm();

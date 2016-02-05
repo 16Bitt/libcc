@@ -1,10 +1,40 @@
 void puts(char* str);
+void putchar(char c);
 
-int main(int argc, char** argv){
-	int x = argc;
-	char** y = argv;
+void twoargs(char* a, char* b, char* c){
+	puts(a);
+	puts(b);
+	puts(c);
+}
+
+void putint(int num){
+	int rem;
+	char c;
+
+	if(num < 0){
+		num = num * -1;
+		putchar('-');
+	}
+
+	if(num == 0){
+		return;
+	}
+
+	rem = num % 10;
+	c = rem + '0';
+	putint(num / 10);
+	putchar(c);
+}
+
+int main(char** argv, int argc){
+	putint(argc);
+	puts("");
 	
-	puts(argv[0]);
+	int i = 1;
+	while(i < argc){
+		puts(argv[i]);
+		i = i + 1;
+	}
 
 	return 0;
 }
