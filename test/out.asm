@@ -126,17 +126,10 @@ main:
 	push ebp
 	mov ebp, esp
 	call libcc_init
-	xor eax, eax
-	mov eax, dword [ebp + 8]
-	push eax
-	call putint
-	mov eax, label11
-	push eax
-	call puts
 	sub esp, 4
 	mov eax, 1
 	mov dword [ebp-4], eax
-label12:
+label11:
 	xor eax, eax
 	mov eax, dword [ebp-4]
 	push eax
@@ -144,14 +137,21 @@ label12:
 	xor eax, eax
 	mov eax, dword [ebp + 8]
 	cmp ebx, eax
-	jl label14
+	jl label13
 	xor eax, eax
-	jmp label15
-label14:
+	jmp label14
+label13:
 	mov eax, 1
-label15:
+label14:
 	or eax, eax
-	jz label13
+	jz label12
+	xor eax, eax
+	mov eax, dword [ebp-4]
+	push eax
+	call putint
+	mov eax, 32
+	push eax
+	call putchar
 	xor eax, eax
 	mov eax, dword [ebp + 12]
 	push eax
@@ -174,8 +174,8 @@ label15:
 	mov eax, 1
 	add eax, ebx
 	mov dword [ebp-4], eax
-	jmp label12
-label13:
+	jmp label11
+label12:
 	mov eax, 0
 	mov esp, ebp
 	pop ebp
@@ -187,4 +187,3 @@ label10:
 	ret
 section .rodata
 LIBRARY_STR: db "Made with libcc", 0
-label11: db "", 0

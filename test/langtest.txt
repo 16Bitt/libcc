@@ -27,11 +27,10 @@ void putint(int num){
 }
 
 int main(char** argv, int argc){
-	putint(argc);
-	puts("");
-	
 	int i = 1;
 	while(i < argc){
+		putint(i);
+		putchar(32);
 		puts(argv[i]);
 		i = i + 1;
 	}

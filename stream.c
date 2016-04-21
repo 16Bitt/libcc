@@ -5,17 +5,33 @@
 FILE* code_input;
 unsigned char look;
 int line_no = 1;
+bool libcc_eof = false;
 
 void whitespace(){
 	while(isspace(look)){
 		if(look == '\n')
 			line_no++;
 		getcharacter();
+		
+		//Check for EOF
+		if(libcc_eof)
+			break;
 	}
 }
 
 void getcharacter(){
-	look = fgetc(code_input);
+	int val = fgetc(code_input);
+	if(val == EOF)
+		libcc_eof = true;
+	else
+		look = val;
+}
+
+char getsomething(){
+	whitespace();
+	char ret = look;
+	getcharacter();
+	return ret;
 }
 
 char* getnumber(){
@@ -101,6 +117,10 @@ char* peekname(){
 		if(i >= BUFFSZ - 1)
 			error("Token exceeded maximum length");
 		getcharacter();
+		
+		//Check for the end of file
+		if(libcc_eof)
+			break;
 	}
 	buff[i] = '\0';
 

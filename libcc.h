@@ -14,6 +14,9 @@ extern unsigned char look;
 //Current line we're parsing
 extern int line_no;
 
+//If we're done here
+extern bool libcc_eof;
+
 //Target files
 extern FILE* code_output;
 extern FILE* code_input;
@@ -25,6 +28,7 @@ char* getnumber();
 char* getname();
 char* peekname();
 char* getstring(char delim);
+char getsomething();
 
 //Check for a specific token
 void match(char* sym);
